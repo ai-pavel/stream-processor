@@ -30,7 +30,7 @@ object WindowAssigner:
 
       case WindowStrategy.Sliding(size, slide) =>
         // The event falls into every window whose start <= timestamp < start + size
-        val firstStart = ((timestamp - size) / slide + 1) * slide
+        val firstStart = (Math.floorDiv(timestamp - size, slide) + 1) * slide
         val starts = Iterator
           .iterate(math.max(0L, firstStart))(_ + slide)
           .takeWhile(s => s <= timestamp)
