@@ -19,5 +19,5 @@ object Event:
     event.payload.asNumber.flatMap(_.toDouble.some)
       .orElse(event.payload.hcursor.downField("value").as[Double].toOption)
 
-  private extension [A](a: A)
+  extension [A](a: A)
     def some: Option[A] = Some(a)
