@@ -1,7 +1,7 @@
 # Stream Processor
 
-[![CI](https://github.com/pavel-genai/stream-processor/actions/workflows/ci.yml/badge.svg)](https://github.com/pavel-genai/stream-processor/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/pavel-genai/stream-processor/branch/main/graph/badge.svg)](https://codecov.io/gh/pavel-genai/stream-processor)
+[![CI](https://github.com/ai-pavel/stream-processor/actions/workflows/ci.yml/badge.svg)](https://github.com/ai-pavel/stream-processor/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/ai-pavel/stream-processor/branch/main/graph/badge.svg)](https://codecov.io/gh/ai-pavel/stream-processor)
 
 A Scala 3 real-time event stream processor with windowing, aggregation, and watermark support.
 
