@@ -1,5 +1,7 @@
 # Stream Processor
 
+[![CI](https://github.com/pavel-genai/stream-processor/actions/workflows/ci.yml/badge.svg)](https://github.com/pavel-genai/stream-processor/actions/workflows/ci.yml)
+
 A Scala 3 real-time event stream processor with windowing, aggregation, and watermark support.
 
 ## Features
