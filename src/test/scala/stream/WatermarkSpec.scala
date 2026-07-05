@@ -34,3 +34,74 @@ class WatermarkSpec extends AnyFlatSpec with Matchers:
     tracker.onEvent(6000)
     tracker.watermark shouldBe 5000L
   }
+
+  it should "start with Long.MinValue watermark" in {
+    val tracker = WatermarkTracker(0)
+    tracker.watermark shouldBe Long.MinValue
+  }
+
+  it should "start with zero late event count" in {
+    val tracker = WatermarkTracker(0)
+    tracker.lateEventCount shouldBe 0
+  }
+
+  it should "accept the first event regardless" in {
+    val tracker = WatermarkTracker(0)
+    tracker.onEvent(0) shouldBe true
+    tracker.watermark shouldBe 0L
+  }
+
+  it should "accept events with same timestamp" in {
+    val tracker = WatermarkTracker(0)
+    tracker.onEvent(1000) shouldBe true
+    tracker.onEvent(1000) shouldBe true
+    tracker.lateEventCount shouldBe 0
+  }
+
+  it should "not advance watermark for older events" in {
+    val tracker = WatermarkTracker(0)
+    tracker.onEvent(5000) shouldBe true
+    tracker.watermark shouldBe 5000L
+    tracker.onEvent(3000) // late, rejected
+    tracker.watermark shouldBe 5000L // watermark should not change
+  }
+
+  it should "count multiple late events" in {
+    val tracker = WatermarkTracker(0)
+    tracker.onEvent(5000)
+    tracker.onEvent(1000) // late
+    tracker.onEvent(2000) // late
+    tracker.onEvent(500)  // late
+    tracker.lateEventCount shouldBe 3
+  }
+
+  it should "reject events just below the lateness threshold" in {
+    val tracker = WatermarkTracker(1000)
+    tracker.onEvent(5000) // watermark = 4000
+    // Events below 4000 - 1000 = 3000 should be rejected
+    tracker.onEvent(2999) shouldBe false
+    tracker.lateEventCount shouldBe 1
+  }
+
+  it should "accept events exactly at the lateness boundary" in {
+    val tracker = WatermarkTracker(1000)
+    tracker.onEvent(5000) // watermark = 4000
+    // Events at 4000 - 1000 = 3000 should be accepted
+    tracker.onEvent(3000) shouldBe true
+    tracker.lateEventCount shouldBe 0
+  }
+
+  it should "handle large timestamp values" in {
+    val tracker = WatermarkTracker(0)
+    val largeTs = Long.MaxValue - 1000
+    tracker.onEvent(largeTs) shouldBe true
+    tracker.watermark shouldBe largeTs
+  }
+
+  it should "handle zero lateness with monotonically increasing events" in {
+    val tracker = WatermarkTracker(0)
+    for ts <- 1000L to 5000L by 1000L do
+      tracker.onEvent(ts) shouldBe true
+    tracker.watermark shouldBe 5000L
+    tracker.lateEventCount shouldBe 0
+  }
