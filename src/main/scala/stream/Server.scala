@@ -82,7 +82,7 @@ final class StreamServer(config: PipelineConfig = Pipeline.demoConfig, port: Int
 
   private def handleHealth(exchange: HttpExchange): Unit =
     if exchange.getRequestMethod != "GET" then methodNotAllowed(exchange, "GET")
-    else respond(exchange, 200, """{"status":"ok","service":"stream-processor"}""")
+    else respond(exchange, 200, """{"status":"ok","service":"pipeline"}""")
 
   private def handleEvents(exchange: HttpExchange): Unit =
     if exchange.getRequestMethod != "POST" then methodNotAllowed(exchange, "POST")

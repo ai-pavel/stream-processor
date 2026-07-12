@@ -34,7 +34,7 @@ class ServerSpec extends AnyFlatSpec with Matchers:
     val response = get(port, "/health")
     response.statusCode() shouldBe 200
     response.headers().firstValue("Content-Type").orElse("") shouldBe "application/json"
-    response.body() shouldBe """{"status":"ok","service":"stream-processor"}"""
+    response.body() shouldBe """{"status":"ok","service":"pipeline"}"""
   }
 
   "POST /events" should "accept a single JSON event" in withServer() { port =>
