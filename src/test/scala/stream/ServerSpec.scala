@@ -130,3 +130,25 @@ class ServerSpec extends AnyFlatSpec with Matchers:
     get(port, "/events").statusCode() shouldBe 405
     post(port, "/aggregates", "{}").statusCode() shouldBe 405
   }
+
+  "StreamServer" should "use the default demo config when none is provided" in {
+    val server = StreamServer(port = 0)
+    server.boundPort should be > 0
+    // Don't start it; just exercise the default-argument constructor path.
+    server.stop()
+  }
+
+  "handler error path" should "return 500 when a handler throws" in withServer(
+    // A tumbling window of size 0 makes WindowAssigner.assign divide by zero,
+    // which throws an ArithmeticException inside handleEvents. The handler
+    // wrapper should catch it and respond with a 500 error envelope.
+    PipelineConfig(
+      windowStrategy = WindowStrategy.Tumbling(0),
+      aggregations = Seq(AggregateFunction.Count)
+    )
+  ) { port =>
+    val response = post(port, "/events", """{"timestamp":100,"key":"k","payload":1.0}""")
+    response.statusCode() shouldBe 500
+    val body = parse(response.body()).toOption.get
+    body.hcursor.downField("error").focus.isDefined shouldBe true
+  }

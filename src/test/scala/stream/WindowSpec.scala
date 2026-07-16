@@ -208,3 +208,26 @@ class WindowSpec extends AnyFlatSpec with Matchers:
     closed should have size 1
     closed.head._2 should have size 1
   }
+
+  it should "merge multiple existing sessions into one when a bridging event arrives" in {
+    val tracker = SessionWindowTracker(500)
+    // Build two open sessions for the same key by adding an event well before
+    // the first one (so it neither matches nor closes the existing session):
+    //   e1 = 1000  -> session [1000,1000]
+    //   e2 = 400   -> 400 < 1000-500, no match; 400 > 1000+500 false -> no close
+    //                 -> new session [400,400]; both sessions stay open
+    //   e3 = 700   -> within gap of BOTH sessions, so matching has >1 entry
+    //                 and the merge-additional-sessions branch (indexed.tail) runs
+    tracker.add(Event(1000, "a", Json.fromInt(1)))
+    tracker.add(Event(400, "a", Json.fromInt(2)))
+    tracker.add(Event(700, "a", Json.fromInt(3)))
+
+    val flushed = tracker.flushAll()
+    flushed should have size 1
+    val (key, window, events) = flushed.head
+    key shouldBe "a"
+    window.start shouldBe 400L
+    window.end shouldBe 1001L
+    events should have size 3
+    events.map(_.timestamp).toSet shouldBe Set(400L, 700L, 1000L)
+  }

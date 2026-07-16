@@ -105,3 +105,11 @@ class WatermarkSpec extends AnyFlatSpec with Matchers:
     tracker.watermark shouldBe 5000L
     tracker.lateEventCount shouldBe 0
   }
+
+  it should "default allowedLatenessMs to 0 when constructed with no args" in {
+    val tracker = WatermarkTracker()
+    tracker.onEvent(1000) shouldBe true
+    // lateness 0: an older event is rejected
+    tracker.onEvent(500) shouldBe false
+    tracker.lateEventCount shouldBe 1
+  }

@@ -56,3 +56,58 @@ class SourceSpec extends AnyFlatSpec with Matchers:
     source.readEvents(e => collected += e)
     collected should have size 3
   }
+
+  "StdinSource" should "read and dispatch valid JSON-line events from stdin" in {
+    val lines =
+      """{"timestamp":100,"key":"a","payload":1.0}
+        |{"timestamp":200,"key":"b","payload":2.0}
+        |{"timestamp":300,"key":"c","payload":3.0}""".stripMargin + "\n"
+    val in = new java.io.ByteArrayInputStream(lines.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    val collected = scala.collection.mutable.ArrayBuffer.empty[Event]
+    Console.withIn(in) {
+      StdinSource.readEvents(e => collected += e)
+    }
+
+    collected should have size 3
+    collected.map(_.key) shouldBe Seq("a", "b", "c")
+    collected.map(_.timestamp) shouldBe Seq(100L, 200L, 300L)
+  }
+
+  it should "skip blank lines and report parse errors to stderr" in {
+    val lines =
+      """{"timestamp":10,"key":"a","payload":1.0}
+
+        |not valid json at all
+        |{"timestamp":20,"key":"b","payload":2.0}
+        |""".stripMargin
+    val in = new java.io.ByteArrayInputStream(lines.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    val collected = scala.collection.mutable.ArrayBuffer.empty[Event]
+    // StdinSource writes parse errors to System.err; redirect it to a
+    // discard stream so the test output stays clean. The important behaviour
+    // is that the invalid line is skipped and the valid events are dispatched.
+    val originalErr = System.err
+    System.setErr(new java.io.PrintStream(new java.io.ByteArrayOutputStream(), true, java.nio.charset.StandardCharsets.UTF_8))
+    try
+      Console.withIn(in) {
+        StdinSource.readEvents(e => collected += e)
+      }
+    finally System.setErr(originalErr)
+
+    // Blank line is skipped, invalid line yields a parse error on stderr,
+    // and the two valid events are dispatched.
+    collected should have size 2
+    collected.map(_.key) shouldBe Seq("a", "b")
+  }
+
+  it should "stop at end of input (null line)" in {
+    val lines = """{"timestamp":5,"key":"k","payload":0.0}
+""".stripMargin
+    val in = new java.io.ByteArrayInputStream(lines.getBytes(java.nio.charset.StandardCharsets.UTF_8))
+    val collected = scala.collection.mutable.ArrayBuffer.empty[Event]
+    Console.withIn(in) {
+      StdinSource.readEvents(e => collected += e)
+    }
+
+    collected should have size 1
+    collected.head.timestamp shouldBe 5L
+  }
